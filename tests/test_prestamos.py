@@ -87,3 +87,46 @@ def test_devolver_equipo():
 
     assert estado[0] == "DISPONIBLE"
     conexion.close()
+def test_consultar_prestamos_activos():
+    conexion = preparar_bd()
+
+    registrar_prestamo(
+        conexion, "12345", "PC001",
+        "2026-11-24", "2026-11-30"
+    )
+
+    prestamos = conexion.execute("""
+        SELECT identificacion_estudiante, codigo_equipo, estado
+        FROM prestamos
+        WHERE estado = 'ACTIVO'
+    """).fetchall()
+
+    assert len(prestamos) == 1
+    assert prestamos[0][0] == "12345"
+    assert prestamos[0][1] == "PC001"
+    assert prestamos[0][2] == "ACTIVO"
+
+    conexion.close()
+
+
+def test_consultar_historial_prestamos():
+    conexion = preparar_bd()
+
+    registrar_prestamo(
+        conexion, "12345", "PC001",
+        "2026-11-24", "2026-11-30"
+    )
+
+    devolver_equipo(conexion, "PC001", "2026-11-25")
+
+    historial = conexion.execute("""
+        SELECT codigo_equipo, estado, fecha_devolucion_real
+        FROM prestamos
+    """).fetchall()
+
+    assert len(historial) == 1
+    assert historial[0][0] == "PC001"
+    assert historial[0][1] == "DEVUELTO"
+    assert historial[0][2] == "2026-11-25"
+
+    conexion.close()
